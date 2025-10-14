@@ -438,10 +438,9 @@ dependencies = [
 [[package]]
 name = "codspeed"
 version = "4.0.4"
-source = "git+https://github.com/CodSpeedHQ/codspeed-rust#d71bcc0ad404a3db27115c8f86db6311437b5964"
+source = "git+https://github.com/CodSpeedHQ/codspeed-rust?branch=cod-1483-error-building-codspeed-rust-with-clang#817b4161cb145faa508b40d8bfc8a7575c1983e0"
 dependencies = [
  "anyhow",
- "bindgen",
  "cc",
  "colored",
  "glob",
@@ -456,7 +455,7 @@ dependencies = [
 [[package]]
 name = "codspeed-divan-compat"
 version = "4.0.4"
-source = "git+https://github.com/CodSpeedHQ/codspeed-rust#d71bcc0ad404a3db27115c8f86db6311437b5964"
+source = "git+https://github.com/CodSpeedHQ/codspeed-rust?branch=cod-1483-error-building-codspeed-rust-with-clang#817b4161cb145faa508b40d8bfc8a7575c1983e0"
 dependencies = [
  "clap",
  "codspeed",
@@ -468,7 +467,7 @@ dependencies = [
 [[package]]
 name = "codspeed-divan-compat-macros"
 version = "4.0.4"
-source = "git+https://github.com/CodSpeedHQ/codspeed-rust#d71bcc0ad404a3db27115c8f86db6311437b5964"
+source = "git+https://github.com/CodSpeedHQ/codspeed-rust?branch=cod-1483-error-building-codspeed-rust-with-clang#817b4161cb145faa508b40d8bfc8a7575c1983e0"
 dependencies = [
  "divan-macros",
  "itertools 0.14.0",
@@ -481,7 +480,7 @@ dependencies = [
 [[package]]
 name = "codspeed-divan-compat-walltime"
 version = "4.0.4"
-source = "git+https://github.com/CodSpeedHQ/codspeed-rust#d71bcc0ad404a3db27115c8f86db6311437b5964"
+source = "git+https://github.com/CodSpeedHQ/codspeed-rust?branch=cod-1483-error-building-codspeed-rust-with-clang#817b4161cb145faa508b40d8bfc8a7575c1983e0"
 dependencies = [
  "cfg-if",
  "clap",
