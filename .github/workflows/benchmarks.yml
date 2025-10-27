@@ -6,7 +6,8 @@ on:
   pull_request:
   push:
     branches:
-      - '*'
+      - "*"
+  workflow_dispatch:
 
 permissions:
   contents: read # to fetch code (actions/checkout)
@@ -78,5 +79,5 @@ jobs:
           mode: instrumentation
           run: |
             echo "Running benchmarks for ${{ matrix.benchmark-target.package }}"
-            cargo codspeed run -p ${{ matrix.benchmark-target.package }} > /dev/null
+            cargo codspeed run -p ${{ matrix.benchmark-target.package }}
           token: ${{ secrets.CODSPEED_TOKEN }}
