@@ -6,15 +6,11 @@ on:
   pull_request:
   push:
     branches:
-      - '*'
+      - "*"
+  workflow_dispatch:
 
 permissions:
   contents: read # to fetch code (actions/checkout)
-
-# End the current execution if there is a new changeset in the PR.
-concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   benchmarks:
@@ -78,5 +74,5 @@ jobs:
           mode: instrumentation
           run: |
             echo "Running benchmarks for ${{ matrix.benchmark-target.package }}"
-            cargo codspeed run -p ${{ matrix.benchmark-target.package }} > /dev/null
+            cargo codspeed run -p ${{ matrix.benchmark-target.package }}
           token: ${{ secrets.CODSPEED_TOKEN }}
