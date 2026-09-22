@@ -11,6 +11,8 @@ name: GnuTests
 
 on:
   pull_request:
+    paths-ignore:
+      - '.github/workflows/**'
   push:
     branches:
       - '*'

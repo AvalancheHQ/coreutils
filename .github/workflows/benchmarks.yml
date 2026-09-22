@@ -6,6 +6,7 @@ name: Benchmarks
 on:
   pull_request:
     paths: &bench_paths
+      - '.github/workflows/benchmarks.yml'
       - 'src/uu/**'
       - 'src/uucore/**'
       - 'src/uucore_procs/**'
@@ -48,7 +49,9 @@ jobs:
 
           changed=$(git diff --name-only "$base" "${{ github.sha }}")
 
-          if echo "$changed" | grep -qE '^(Cargo\.(toml|lock)|src/(uucore|uucore_procs)/)'; then
+          if echo "$changed" | grep -Fxq '.github/workflows/benchmarks.yml'; then
+            candidates=$(ls src/uu)
+          elif echo "$changed" | grep -qE '^(Cargo\.(toml|lock)|src/(uucore|uucore_procs)/)'; then
             candidates=$(ls src/uu)
           else
             candidates=$(echo "$changed" | awk -F'/' '/^src\/uu\// {print $3}' | sort -u)
@@ -66,17 +69,20 @@ jobs:
   benchmarks:
     needs: detects-benchmarks
     if: needs.detects-benchmarks.outputs.package != '[]'
-    name: Run ${{ matrix.type }} benchmarks for ${{ matrix.package }} (CodSpeed)
+    name: Run memory benchmarks for ${{ matrix.package }} (CodSpeed)
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
       CARGO_INCREMENTAL: 0
+      CODSPEED_REV: 2152fe2e013cccd5436e788dd4ae41a050d2b861
+      CODSPEED_API_URL: https://7j3xul0pqk.execute-api.eu-west-1.amazonaws.com/dev/
+      CODSPEED_EXPERIMENTAL_MEMORY_CAPTURE_STACK: "true"
+      CODSPEED_LOG: debug
     strategy:
-      # Stagger the jobs: 70 concurrent runners hitting the GitHub cache API
+      # Stagger the memory-only jobs: concurrent runners hitting the GitHub cache API
       # (rust-cache + sccache + CodSpeed) at once triggers HTTP 429s.
       max-parallel: 12
       matrix:
-        type: [simulation, memory]
         package: ${{ fromJson(needs.detects-benchmarks.outputs.package) }}
     steps:
       - uses: actions/checkout@v7.0.1
@@ -101,24 +107,90 @@ jobs:
           sudo locale-gen fr_FR.UTF-8
           sudo update-locale
 
+      - name: Install memtrack build dependencies
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y autopoint bison flex
+
+      - name: Install memtrack
+        uses: baptiste0928/cargo-install@v3.5.0
+        with:
+          crate: memtrack
+          git: https://github.com/CodSpeedHQ/codspeed
+          commit: ${{ env.CODSPEED_REV }}
+
+      - name: Record memtrack binary
+        id: memtrack
+        shell: bash
+        run: |
+          set -euo pipefail
+          path="$(command -v codspeed-memtrack)"
+          version="$(codspeed-memtrack --version)"
+          sha="$(sha256sum "$path" | awk '{print $1}')"
+          if [ -z "$path" ] || [ -z "$version" ] || [ -z "$sha" ]; then
+            echo "::error::Failed to record codspeed-memtrack path, version, and SHA-256"
+            exit 1
+          fi
+          {
+            echo "path=$path"
+            echo "version=$version"
+            echo "sha=$sha"
+          } >> "$GITHUB_OUTPUT"
+          echo "codspeed-memtrack path: $path"
+          echo "codspeed-memtrack version: $version"
+          echo "codspeed-memtrack SHA-256: $sha"
+
       - name: Install tools
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-codspeed
-
-      - name: Build benchmarks for ${{ matrix.package }} (${{ matrix.type }})
+      - name: Build memory benchmarks for ${{ matrix.package }}
         shell: bash
         run: |
-          echo "Building ${{ matrix.type }} benchmarks for ${{ matrix.package }}"
-          cargo codspeed build -m ${{ matrix.type }} -p ${{ matrix.package }}
-
-      - name: Run ${{ matrix.type }} benchmarks for ${{ matrix.package }}
+          echo "Building memory benchmarks for ${{ matrix.package }}"
+          cargo codspeed build -m memory -p ${{ matrix.package }}
+      - name: Run memory benchmarks for ${{ matrix.package }}
         uses: CodSpeedHQ/action@v5
-        env:
-          CODSPEED_LOG: debug
         with:
-          mode: ${{ matrix.type }}
+          mode: memory
           run: |
-            echo "Running ${{ matrix.type }} benchmarks for ${{ matrix.package }}"
+            echo "Running memory benchmarks for ${{ matrix.package }}"
             cargo codspeed run -p ${{ matrix.package }} > /dev/null
           token: ${{ secrets.CODSPEED_TOKEN }}
+          upload-url: https://aiy2l19wii.execute-api.eu-west-1.amazonaws.com/upload
+          runner-version: rev:${{ env.CODSPEED_REV }}
+          skip-hash-check-warning: true
+
+      - name: Verify memtrack binary was not replaced
+        if: always()
+        shell: bash
+        env:
+          RECORDED_MEMTRACK_PATH: ${{ steps.memtrack.outputs.path }}
+          RECORDED_MEMTRACK_VERSION: ${{ steps.memtrack.outputs.version }}
+          RECORDED_MEMTRACK_SHA: ${{ steps.memtrack.outputs.sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "$RECORDED_MEMTRACK_PATH" ] || \
+             [ -z "$RECORDED_MEMTRACK_VERSION" ] || \
+             [ -z "$RECORDED_MEMTRACK_SHA" ]; then
+            echo "::error::Recorded codspeed-memtrack output is empty"
+            exit 1
+          fi
+          current_path="$(command -v codspeed-memtrack || true)"
+          if [ -z "$current_path" ]; then
+            echo "::error::codspeed-memtrack is missing after the CodSpeed action"
+            exit 1
+          fi
+          current_version="$(codspeed-memtrack --version)"
+          current_sha="$(sha256sum "$current_path" | awk '{print $1}')"
+          echo "Recorded codspeed-memtrack path: $RECORDED_MEMTRACK_PATH"
+          echo "Recorded codspeed-memtrack version: $RECORDED_MEMTRACK_VERSION"
+          echo "Recorded codspeed-memtrack SHA-256: $RECORDED_MEMTRACK_SHA"
+          echo "Resolved codspeed-memtrack path: $current_path"
+          echo "Resolved codspeed-memtrack version: $current_version"
+          echo "Resolved codspeed-memtrack SHA-256: $current_sha"
+          if [ "$current_sha" != "$RECORDED_MEMTRACK_SHA" ]; then
+            echo "::error::codspeed-memtrack was replaced during the CodSpeed action"
+            exit 1
+          fi
