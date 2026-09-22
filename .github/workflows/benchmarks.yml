@@ -86,6 +86,9 @@ jobs:
       max-parallel: 12
       matrix:
         package: ${{ fromJson(needs.detects-benchmarks.outputs.package) }}
+        # ptx produces over 120 million events in memory mode and cannot complete a dev upload.
+        exclude:
+          - package: uu_ptx
     steps:
       - uses: actions/checkout@v7.0.1
         with:
