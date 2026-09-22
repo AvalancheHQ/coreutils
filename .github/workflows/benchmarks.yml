@@ -79,6 +79,7 @@ jobs:
       CODSPEED_EXPERIMENTAL_MEMORY_CAPTURE_STACK: "true"
       CODSPEED_LOG: debug
     strategy:
+      fail-fast: false
       # Stagger the memory-only jobs: concurrent runners hitting the GitHub cache API
       # (rust-cache + sccache + CodSpeed) at once triggers HTTP 429s.
       max-parallel: 12
@@ -111,8 +112,7 @@ jobs:
         shell: bash
         run: |
           sudo apt-get update
-          sudo apt-get install --no-install-recommends -y autopoint bison flex
-
+          sudo apt-get install --no-install-recommends -y autoconf autopoint bison build-essential clang flex gawk libbpf-dev pkgconf zlib1g-dev
       - name: Install memtrack
         uses: baptiste0928/cargo-install@v3.5.0
         with:
