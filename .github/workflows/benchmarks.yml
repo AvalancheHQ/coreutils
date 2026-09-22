@@ -19,6 +19,7 @@ on:
 
 permissions:
   contents: read # to fetch code (actions/checkout)
+  id-token: write # to authenticate uploads against the dev stack
 
 # End the current execution if there is a new changeset in the PR.
 concurrency:
@@ -165,7 +166,6 @@ jobs:
           run: |
             echo "Running memory benchmarks for ${{ matrix.package }}"
             cargo codspeed run -p ${{ matrix.package }} > /dev/null
-          token: ${{ secrets.CODSPEED_TOKEN }}
           upload-url: https://aiy2l19wii.execute-api.eu-west-1.amazonaws.com/upload
           runner-version: rev:${{ env.CODSPEED_REV }}
           skip-hash-check-warning: true
