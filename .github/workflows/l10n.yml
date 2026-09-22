@@ -4,6 +4,8 @@ name: L10n (Localization)
 
 on:
   pull_request:
+    paths-ignore:
+      - '.github/workflows/**'
   push:
     branches:
       - '*'

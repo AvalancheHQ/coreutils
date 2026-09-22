@@ -16,6 +16,8 @@ on:
   pull_request:
     branches:
       - main # == env.BRANCH_TARGET ## unfortunately, env context variables are only available in jobs/steps (see <https://github.community/t/how-to-use-env-context/16975/2>)
+    paths-ignore:
+      - '.github/workflows/**'
     types: [ closed ]
 
 jobs:

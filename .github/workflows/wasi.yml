@@ -4,6 +4,8 @@ name: WASI
 # spell-checker:ignore TRIGGERPATH
 on:
   pull_request:
+    paths-ignore:
+      - '.github/workflows/**'
   push:
     branches:
       - main

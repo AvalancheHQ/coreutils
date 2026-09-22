@@ -5,6 +5,8 @@ name: Code Quality
 
 on:
   pull_request:
+    paths-ignore:
+      - '.github/workflows/**'
   push:
     branches:
       - '*'
